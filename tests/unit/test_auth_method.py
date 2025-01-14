@@ -394,6 +394,34 @@ class TestIAMUserMethodServerless(AuthMethod):
             )
         self.assertTrue("'host' must be provided" in context.exception.msg)
 
+    @mock.patch("redshift_connector.connect", MagicMock())
+    def test_profile_explicit_is_serverless(self):
+        self.config.credentials = self.config.credentials.replace(
+            method="iam",
+            iam_profile="test",
+            host="custom-redshift-host.amazonaws.com",
+            is_serverless=True,
+        )
+        connection = self.adapter.acquire_connection("dummy")
+        connection.handle
+        redshift_connector.connect.assert_called_once_with(
+            iam=True,
+            host="custom-redshift-host.amazonaws.com",
+            database="redshift",
+            cluster_identifier=None,
+            region=None,
+            auto_create=False,
+            db_groups=[],
+            db_user="root",
+            password="",
+            user="",
+            profile="test",
+            port=5439,
+            timeout=None,
+            is_serverless=True,
+            **DEFAULT_SSL_CONFIG,
+        )
+
 
 class TestIAMRoleMethod(AuthMethod):
 
@@ -573,6 +601,35 @@ class TestIAMRoleMethodServerless(AuthMethod):
                 **DEFAULT_SSL_CONFIG,
             )
         self.assertTrue("'host' must be provided" in context.exception.msg)
+
+    @mock.patch("redshift_connector.connect", MagicMock())
+    def test_profile_explicit_is_serverless(self):
+        self.config.credentials = self.config.credentials.replace(
+            method="iam_role",
+            iam_profile="iam_profile_test",
+            host="custom-redshift-host.amazonaws.com",
+            is_serverless=True,
+        )
+        connection = self.adapter.acquire_connection("dummy")
+        connection.handle
+        redshift_connector.connect.assert_called_once_with(
+            iam=True,
+            host="custom-redshift-host.amazonaws.com",
+            database="redshift",
+            cluster_identifier=None,
+            region=None,
+            auto_create=False,
+            db_groups=[],
+            db_user=None,
+            password="",
+            user="",
+            profile="iam_profile_test",
+            port=5439,
+            timeout=None,
+            group_federation=False,
+            is_serverless=True,
+            **DEFAULT_SSL_CONFIG,
+        )
 
 
 class TestIAMIdcBrowser(AuthMethod):

@@ -141,6 +141,7 @@ class RedshiftCredentials(Credentials):
     autocommit: Optional[bool] = True
     access_key_id: Optional[str] = None
     secret_access_key: Optional[str] = None
+    is_serverless: Optional[bool] = False
 
     #
     # IAM identity center methods
@@ -181,6 +182,7 @@ class RedshiftCredentials(Credentials):
             "retries",
             "autocommit",
             "access_key_id",
+            "is_serverless",
         )
 
     @property
@@ -208,6 +210,13 @@ def get_connection_method(
         redshift_ssl_config: Dict[str, Any] = RedshiftSSLConfig.parse(
             credentials.sslmode
         ).to_dict()
+
+        redshift_serverless_config: Dict[str, Any] = {}
+        if credentials.is_serverless:
+            redshift_serverless_config = {
+                "is_serverless": credentials.is_serverless,
+            }
+
         return {
             "host": credentials.host,
             "port": int(credentials.port) if credentials.port else 5439,
@@ -217,6 +226,7 @@ def get_connection_method(
             "db_groups": credentials.db_groups,
             "timeout": credentials.connect_timeout,
             **redshift_ssl_config,
+            **redshift_serverless_config,
         }
 
     def __iam_kwargs(credentials) -> Dict[str, Any]:
@@ -225,7 +235,7 @@ def get_connection_method(
         iam: bool = RedshiftConnectionMethod.is_iam(credentials.method)
 
         cluster_identifier: Optional[str]
-        if "serverless" in credentials.host or RedshiftConnectionMethod.uses_identity_center(
+        if "serverless" in credentials.host or credentials.is_serverless or RedshiftConnectionMethod.uses_identity_center(
             credentials.method
         ):
             cluster_identifier = None
@@ -284,7 +294,7 @@ def get_connection_method(
         logger.debug("Connecting to Redshift with 'iam_role' credentials method")
         role_kwargs = {
             "db_user": None,
-            "group_federation": "serverless" not in credentials.host,
+            "group_federation": not (("serverless" in credentials.host) or credentials.is_serverless),
         }
 
         if credentials.iam_profile:
