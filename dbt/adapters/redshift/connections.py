@@ -142,6 +142,8 @@ class RedshiftCredentials(Credentials):
     access_key_id: Optional[str] = None
     secret_access_key: Optional[str] = None
     is_serverless: Optional[bool] = False
+    serverless_work_group: Optional[str] = None
+    serverless_acct_id: Optional[str] = None
 
     #
     # IAM identity center methods
@@ -183,6 +185,8 @@ class RedshiftCredentials(Credentials):
             "autocommit",
             "access_key_id",
             "is_serverless",
+            "serverless_acct_id",
+            "serverless_work_group",
         )
 
     @property
@@ -216,6 +220,10 @@ def get_connection_method(
             redshift_serverless_config = {
                 "is_serverless": credentials.is_serverless,
             }
+        if credentials.serverless_work_group:
+            redshift_serverless_config["serverless_work_group"] = credentials.serverless_work_group
+        if credentials.serverless_acct_id:
+            redshift_serverless_config["serverless_acct_id"] = credentials.serverless_acct_id
 
         return {
             "host": credentials.host,

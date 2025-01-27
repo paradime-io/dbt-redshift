@@ -631,6 +631,40 @@ class TestIAMRoleMethodServerless(AuthMethod):
             **DEFAULT_SSL_CONFIG,
         )
 
+    @mock.patch("redshift_connector.connect", MagicMock())
+    def test_profile_serverless_work_group_and_acct_id(self):
+        self.config.credentials = self.config.credentials.replace(
+            method="iam_role",
+            iam_profile="iam_profile_test",
+            host="custom-redshift-host.amazonaws.com",
+            is_serverless=True,
+            serverless_work_group="my_work_group",
+            serverless_acct_id="123456789012",
+        )
+
+        connection = self.adapter.acquire_connection("dummy")
+        connection.handle
+        redshift_connector.connect.assert_called_once_with(
+            iam=True,
+            host="custom-redshift-host.amazonaws.com",
+            database="redshift",
+            cluster_identifier=None,
+            region=None,
+            auto_create=False,
+            db_groups=[],
+            db_user=None,
+            password="",
+            user="",
+            profile="iam_profile_test",
+            port=5439,
+            timeout=None,
+            group_federation=False,
+            is_serverless=True,
+            serverless_work_group="my_work_group",
+            serverless_acct_id="123456789012",
+            **DEFAULT_SSL_CONFIG,
+        )
+
 
 class TestIAMIdcBrowser(AuthMethod):
     @mock.patch("redshift_connector.connect", MagicMock())
